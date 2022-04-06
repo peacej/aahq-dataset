@@ -8,6 +8,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--json_dir', type=str, default='./AAHQ-dataset.json', help='path to AAHQ metadata file')
+    parser.add_argument('--resume',type=int,default=0, help='Resume from this index, defaults to 0 to download from the beginning')
     parser.add_argument('--save_dir', type=str, default='./raw', help='path to save original images')
     parser.add_argument('--retries', type=int, default=4, help='Maximum number of retries')
     parser.add_argument('--max_delay_second', type=float, default=2.0)
@@ -24,9 +25,12 @@ if __name__ == '__main__':
     urls = []
     for k, v in js.items():
         urls.append(v['image_url'])
-    NUM = len(urls)
+    NUM = len(urls) 
     not_found_urls = []
-    for idx in range(NUM):
+    if args.resume > 0:
+        assert args.resume > NUM, "Invalid resume index ... "
+    for idx in range(NUM if args.resume > 0 else NUM-args.resume):
+        idx = idx + args.resume if args.resume > 0 else idx
         url = urls[idx]
         imgname = '_'.join(url.split('/')[-5:])
 
