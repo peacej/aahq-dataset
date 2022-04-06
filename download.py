@@ -28,8 +28,8 @@ if __name__ == '__main__':
     NUM = len(urls) 
     not_found_urls = []
     if args.resume > 0:
-        assert args.resume > NUM, "Invalid resume index ... "
-    for idx in range(NUM if args.resume > 0 else NUM-args.resume):
+        assert args.resume < NUM, "Invalid resume index ... "
+    for idx in range(NUM if args.resume > 0 else NUM - args.resume):
         idx = idx + args.resume if args.resume > 0 else idx
         url = urls[idx]
         imgname = '_'.join(url.split('/')[-5:])
