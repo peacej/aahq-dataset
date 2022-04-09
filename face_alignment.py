@@ -98,7 +98,8 @@ if __name__ == '__main__':
     parser.add_argument('--json_dir', type=str, default='./AAHQ-dataset.json', help='path to AAHQ metadata file')
     parser.add_argument('--raw_dir', type=str, default='./raw', help='path to original images')
     parser.add_argument('--save_dir', type=str, default='./aligned', help='path to save aligned images')
-    parser.add_argument('--n_worker', type=int, default=8)
+    parser.add_argument('--n_worker', type=int, default=4)
+    parser.add_argument('--resume', type=int, default=0,help='resume alignment at index n')
 
     args = parser.parse_args()
 
@@ -107,7 +108,7 @@ if __name__ == '__main__':
 
     js = load_json(args.json_dir)
 
-    imgnames = js.keys()
+    imgnames = js.keys() if args.resume == 0 else list(js.keys())[args.resume:]
     files = [(aligned_name, js[aligned_name]['raw_name'], js[aligned_name]['landmarks']) for aligned_name in imgnames]
 
     align_fn = partial(align_worker, raw_dir=args.raw_dir, save_dir=args.save_dir)
