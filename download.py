@@ -9,6 +9,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--json_dir', type=str, default='./AAHQ-dataset.json', help='path to AAHQ metadata file')
     parser.add_argument('--resume',type=int,default=0, help='Resume from this index, defaults to 0 to download from the beginning')
+    parser.add_argument('--stop',type=int,default=99999, help='Stop at this index, defaults to 99999 to download all images')
     parser.add_argument('--save_dir', type=str, default='./raw', help='path to save original images')
     parser.add_argument('--retries', type=int, default=4, help='Maximum number of retries')
     parser.add_argument('--max_delay_second', type=float, default=2.0)
@@ -30,32 +31,33 @@ if __name__ == '__main__':
     if args.resume > 0:
         assert args.resume < NUM, "Invalid resume index ... "
     for idx in range(NUM if args.resume > 0 else NUM - args.resume):
-        idx = idx + args.resume if args.resume > 0 else idx
-        url = urls[idx]
-        imgname = '_'.join(url.split('/')[-5:])
+        if idx <= args.stop:
+            idx = idx + args.resume if args.resume > 0 else idx
+            url = urls[idx]
+            imgname = '_'.join(url.split('/')[-5:])
 
-        if os.path.exists(os.path.join(save_dir, imgname)):
-            print('exist! [%d/%d] %s' % (idx, NUM, imgname))
-            continue
+            if os.path.exists(os.path.join(save_dir, imgname)):
+                print('exist! [%d/%d] %s' % (idx, NUM, imgname))
+                continue
 
-        res = None
-        for try_num in range(args.retries):
-            randdelay(0, args.max_delay_second)
+            res = None
+            for try_num in range(args.retries):
+                randdelay(0, args.max_delay_second)
 
-            res = requests.get(url)
+                res = requests.get(url)
+                if res.status_code == 200:
+                    break
+
             if res.status_code == 200:
-                break
+                img_file = res.content
 
-        if res.status_code == 200:
-            img_file = res.content
+                with open(os.path.join(save_dir, imgname), 'wb') as f:
+                    f.write(img_file)
 
-            with open(os.path.join(save_dir, imgname), 'wb') as f:
-                f.write(img_file)
-
-            print('[%d/%d] %s' % (idx, NUM, imgname))
-        else:
-            print('Not found! [%d/%d] %s' % (idx, NUM, imgname))
-            not_found_urls.append(urls)
+                print('[%d/%d] %s' % (idx, NUM, imgname))
+            else:
+                print('Not found! [%d/%d] %s' % (idx, NUM, imgname))
+                not_found_urls.append(urls)
 
     print('\n====================== URLs Not Found ======================')
     for url in not_found_urls:
