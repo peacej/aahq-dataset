@@ -12,7 +12,7 @@ from tqdm import tqdm
 PIL.ImageFile.LOAD_TRUNCATED_IMAGES = True  # avoid "Decompressed Data Too Large" error
 
 
-def image_align(img, landmarks, output_size=1024, transform_size=4096, enable_padding=True):
+def image_align(img, landmarks, output_size, transform_size, enable_padding):
     # https://github.com/NVlabs/ffhq-dataset/blob/master/download_ffhq.py
 
     eye_left = np.array(landmarks['eye_left'])
@@ -75,7 +75,7 @@ def image_align(img, landmarks, output_size=1024, transform_size=4096, enable_pa
     return img
 
 
-def align_worker(files, raw_dir, save_dir):
+def align_worker(files, raw_dir, save_dir, output_size, transform_size):
     aligned_name, raw_name, landmarks = files
     raw_img_path = os.path.join(raw_dir, raw_name)
     aligned_img_path = os.path.join(save_dir, aligned_name)
@@ -87,7 +87,7 @@ def align_worker(files, raw_dir, save_dir):
         return 1
 
     img = PIL.Image.open(raw_img_path)
-    img_aligned = image_align(img, landmarks, output_size=1024, transform_size=4096, enable_padding=True)
+    img_aligned = image_align(img, landmarks, output_size=output_size, transform_size=transform_size, enable_padding=True)
     img_aligned.save(aligned_img_path)
     return 2
 
@@ -98,6 +98,8 @@ if __name__ == '__main__':
     parser.add_argument('--json_dir', type=str, default='./AAHQ-dataset.json', help='path to AAHQ metadata file')
     parser.add_argument('--raw_dir', type=str, default='./raw', help='path to original images')
     parser.add_argument('--save_dir', type=str, default='./aligned', help='path to save aligned images')
+    parser.add_argument('--output_size', type=int, default=512, help='')
+    parser.add_argument('--transform_size', type=int, default=512, help='')
     parser.add_argument('--n_worker', type=int, default=4)
     parser.add_argument('--resume', type=int, default=0,help='resume alignment at index n')
 
@@ -111,7 +113,7 @@ if __name__ == '__main__':
     imgnames = js.keys() if args.resume == 0 else list(js.keys())[args.resume:]
     files = [(aligned_name, js[aligned_name]['raw_name'], js[aligned_name]['landmarks']) for aligned_name in imgnames]
 
-    align_fn = partial(align_worker, raw_dir=args.raw_dir, save_dir=args.save_dir)
+    align_fn = partial(align_worker, raw_dir=args.raw_dir, save_dir=args.save_dir, output_size=args.output_size, transform_size=args.transform_size)
 
     total = 0
     with multiprocessing.Pool(args.n_worker) as pool:
